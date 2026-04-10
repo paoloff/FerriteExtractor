@@ -1,2 +1,2 @@
 # FerriteExtension
-Scripts for exporting stifnesses and mass matrices from Julia's Ferrite to polynomial format
+Scripts for exporting stiffness and mass matrices of finite element models in Julia's Ferrite to polynomial format
