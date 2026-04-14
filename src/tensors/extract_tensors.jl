@@ -8,33 +8,21 @@ using ForwardDiff
 # all evaluated at u = 0. For SVK these are exact (f is cubic in u).
 
 # Extract the three local tensors for one element via nested ForwardDiff.
+
+# Index layout (column-major vec + reshape):
+#   J1[i, j]                         = ∂f_i/∂u_j
+#   J2[i + (j-1)n, k]                = ∂²f_i/∂u_j∂u_k
+#   J3[i + (j-1)n + (k-1)n², l]      = ∂³f_i/∂u_j∂u_k∂u_l
 function extract_elem_tensors(geom::ElementGeom, mat::SVKMaterial)
     ndof = length(geom.gdofs)
     u0   = zeros(ndof)
     f(u) = elem_force_pure(u, geom, mat)
+    g(u) = vec(ForwardDiff.jacobian(f, u))
+    h(u) = vec(ForwardDiff.jacobian(g, u))
 
-    # K1e: linear stiffness
     K1e = ForwardDiff.jacobian(f, u0)
-
-    # K2e: ½ Hessian of each output component
-    K2e = zeros(ndof, ndof, ndof)
-    for i in 1:ndof
-        Hi = ForwardDiff.hessian(u -> elem_force_pure(u, geom, mat)[i], u0)
-        for j in 1:ndof, k in 1:ndof
-            K2e[i, j, k] = Hi[j, k] / 2
-        end
-    end
-
-    # K3e: ⅙ Jacobian of vec(Hessian)
-    K3e = zeros(ndof, ndof, ndof, ndof)
-    for i in 1:ndof
-        vecHi(u) = vec(ForwardDiff.hessian(
-            v -> elem_force_pure(v, geom, mat)[i], u))
-        JH = ForwardDiff.jacobian(vecHi, u0)
-        for l in 1:ndof, k in 1:ndof, j in 1:ndof
-            K3e[i, j, k, l] = JH[j + (k - 1) * ndof, l] / 6
-        end
-    end
+    K2e = reshape(ForwardDiff.jacobian(g, u0), ndof, ndof, ndof) ./ 2
+    K3e = reshape(ForwardDiff.jacobian(h, u0), ndof, ndof, ndof, ndof) ./ 6
 
     return K1e, K2e, K3e
 end
