@@ -1,10 +1,8 @@
 using SparseArrays
 
 # Analytical SVK polynomial-tensor assembly.
-# Mirrors assemble_poly_tensors but calls extract_elem_tensors_svk per element
-# instead of ForwardDiff. Output layout (K1::SparseMatrixCSC, K2::SparseT3,
-# K3::SparseT4) is identical, so downstream code (BCs, export, evaluation)
-# works unchanged.
+# Same as assemble_poly_tensors but calls extract_elem_tensors_svk per element
+# instead of ForwardDiff
 function assemble_poly_tensors_svk(elems::Vector{ElementGeom}, mat::SVKMaterial,
                                    nDOF::Int; tol=1e-15)
     Ir1 = Int[];     Ic1 = Int[];     V1  = Float64[]
